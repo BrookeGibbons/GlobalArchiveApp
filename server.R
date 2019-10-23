@@ -111,21 +111,32 @@ function(input, output, session) {
 ### Read in life history google sheet ----
 life.history<-  reactive({
   
-    req(input$worksheet.name, input$sheet.name)
-    
   
-  gs_auth(new_user = TRUE) # force access
+  life.history<-read.csv("Australia.life.history - australia.life.history.csv")%>%
+        mutate(trophic.group=ga.capitalise(RLS.trophic.group))%>%
+        dplyr::mutate(target.group=str_replace_all(.$Fishing.type,c("R"="Recreational","C"="Commercial","B/"="","B"="Bycatch","Commercial/Recreational"="Target","Commercial"="Target","Recreational"="Target")))%>%
+        dplyr::mutate(trophic.group=str_replace_all(.$trophic.group,c("NANA"="Missing trophic group","NA"="Missing trophic group")))%>%
+        tidyr::replace_na(list(target.group="Non-target",trophic.group="Missing trophic group"))%>%
+        dplyr::mutate(target.group = factor(target.group, levels = c("Target","Bycatch","Non-target")))%>%
+        dplyr::mutate(target.group = fct_relevel(target.group, "Target","Bycatch","Non-target"))%>%
+        dplyr::select(Family,Genus,Species,trophic.group,target.group)%>%
+        ga.clean.names()
   
-    life.history <- gs_title(input$worksheet.name)%>%
-      gs_read(ws = input$sheet.name)%>%
-      mutate(trophic.group=ga.capitalise(RLS.trophic.group))%>%
-      dplyr::mutate(target.group=str_replace_all(.$Fishing.type,c("R"="Recreational","C"="Commercial","B/"="","B"="Bycatch","Commercial/Recreational"="Target","Commercial"="Target","Recreational"="Target")))%>%
-      dplyr::mutate(trophic.group=str_replace_all(.$trophic.group,c("NANA"="Missing trophic group","NA"="Missing trophic group")))%>%
-      tidyr::replace_na(list(target.group="Non-target",trophic.group="Missing trophic group"))%>%
-      dplyr::mutate(target.group = factor(target.group, levels = c("Target","Bycatch","Non-target")))%>%
-      dplyr::mutate(target.group = fct_relevel(target.group, "Target","Bycatch","Non-target"))%>%
-      dplyr::select(Family,Genus,Species,trophic.group,target.group)%>%
-      ga.clean.names()
+  #   req(input$worksheet.name, input$sheet.name)
+  #   
+  # 
+  # gs_auth(new_user = TRUE) # force access
+  # 
+  #   life.history <- gs_title(input$worksheet.name)%>%
+  #     gs_read(ws = input$sheet.name)%>%
+  #     mutate(trophic.group=ga.capitalise(RLS.trophic.group))%>%
+  #     dplyr::mutate(target.group=str_replace_all(.$Fishing.type,c("R"="Recreational","C"="Commercial","B/"="","B"="Bycatch","Commercial/Recreational"="Target","Commercial"="Target","Recreational"="Target")))%>%
+  #     dplyr::mutate(trophic.group=str_replace_all(.$trophic.group,c("NANA"="Missing trophic group","NA"="Missing trophic group")))%>%
+  #     tidyr::replace_na(list(target.group="Non-target",trophic.group="Missing trophic group"))%>%
+  #     dplyr::mutate(target.group = factor(target.group, levels = c("Target","Bycatch","Non-target")))%>%
+  #     dplyr::mutate(target.group = fct_relevel(target.group, "Target","Bycatch","Non-target"))%>%
+  #     dplyr::select(Family,Genus,Species,trophic.group,target.group)%>%
+  #     ga.clean.names()
     
     life.history
     

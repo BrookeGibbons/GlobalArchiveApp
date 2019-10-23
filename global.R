@@ -65,6 +65,12 @@ se.max <- function(x) (mean(x)) + se(x)
 # Colour palette for habitat plot ----
 colors <- c("#d94c45","#78807a","#bd6539","#d67cc9","#d99445","#4eb570","#faef52")
 
+token <- gs_auth(cache = FALSE)
+gd_token()
+saveRDS(token, file = "googlesheets_token.rds")
+
+
+
 #4eb570 green
 #d94c45 red
 #bd6539 brown
