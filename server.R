@@ -113,6 +113,9 @@ life.history<-  reactive({
   
     req(input$worksheet.name, input$sheet.name)
     
+  
+  gs_auth(new_user = TRUE) # force access
+  
     life.history <- gs_title(input$worksheet.name)%>%
       gs_read(ws = input$sheet.name)%>%
       mutate(trophic.group=ga.capitalise(RLS.trophic.group))%>%
