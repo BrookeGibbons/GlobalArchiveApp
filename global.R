@@ -32,9 +32,15 @@ library(googlesheets)
 library(forcats)
 library(leaflet.minicharts)
 library(GlobalArchive)
+library(extrafont)
 
 # Increase max size of file uploads ----
 options(shiny.maxRequestSize=1000*1024^2)
+
+# Load font
+loadfonts(device="win")  
+#font_import()
+fonts()   
 
 # Theme for plotting ----
 Theme1 <-
@@ -46,7 +52,7 @@ Theme1 <-
     legend.text = element_text(size=15),
     legend.title = element_blank(),
     legend.position = "top",
-    text=element_text(size=14),
+    #text=element_text(size=14),
     strip.text.y = element_text(size = 14,angle = 0),
     axis.title.x=element_text(vjust=0.3, size=15),
     axis.title.y=element_text(vjust=0.6, angle=90, size=15),
@@ -54,7 +60,8 @@ Theme1 <-
     axis.line.x=element_line(colour="black", size=0.5,linetype='solid'),
     axis.line.y=element_line(colour="black", size=0.5,linetype='solid'),
     strip.background = element_blank(),
-    plot.title = element_text(color="black", size=14, face="bold.italic"))
+    plot.title = element_text(color="black", size=14, face="bold.italic"),
+    text=element_text(family="sans serif", size=14))
 
 
 # functions for summarising data on plots ----

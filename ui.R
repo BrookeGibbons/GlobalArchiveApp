@@ -34,16 +34,22 @@ navbarPage(
     "MaxN summary",
     sidebarLayout(
       sidebarPanel(
+        # Select CampaignID:
+        selectInput(inputId = "maxn.summary.campaignid.selector", label = "CampaignID",
+                    choices = NULL),
+        
+        # Select summarise by:
         selectInput("maxn.summary.groupby", "Summarise by :",
                     c("Species" = "Species",
                       "Target group" = "Target group",
-                      "Trophic group" = "Trophic group")),width = 2),
+                      "Trophic group" = "Trophic group")),width = 3),
       
-      mainPanel(strong("Total abundance:"),textOutput("overall.abundance"),
-                br(),
-                strong("Species richness:"),textOutput("species.richness"),
-                br(),
-                br(),
+      mainPanel(#strong("Total abundance:"),textOutput("overall.abundance"),
+                #br(),
+                #strong("Species richness:"),textOutput("species.richness"),
+                #br(),
+                DT::dataTableOutput('maxn.overall.summary'),
+                br(),br(),br(),
                 DT::dataTableOutput('maxn.summary')))),
   
   # MaxN Plot species Tab ----
@@ -76,6 +82,8 @@ navbarPage(
         selectInput(inputId = "maxn.metric.campaignid.selector", label = "CampaignID",
                     choices = NULL),
         selectInput("maxn.metric.selector", "Select metric to plot", choices = c("Total abundance",
+                                                                             "Family richness",
+                                                                             "Genus richness",
                                                                              "Species richness",
                                                                              "Abundance by trophic group",
                                                                              "Abundance by target group"), multiple = FALSE),width = 3),

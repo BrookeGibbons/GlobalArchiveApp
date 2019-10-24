@@ -52,6 +52,7 @@ function(input, output, session) {
     
     # Update selector
     updateSelectInput(session, "maxn.campaignid.selector", choices = options, selected = "All")
+    updateSelectInput(session, "maxn.summary.campaignid.selector", choices = options, selected = "All")
     updateSelectInput(session, "maxn.metric.campaignid.selector", choices = options, selected = "All")
 
   })
@@ -197,12 +198,14 @@ species.richness<-maxn.data%>%
   mutate(metric="Species richness")
 
 family.richness<-maxn.data%>%
+  filter(maxn>0)%>%
   dplyr::group_by(campaignid,sample,status,location,site,latitude,longitude)%>%
   dplyr::summarise(total.abundance=length(unique(family)))%>%
   ungroup()%>%
   mutate(metric="Family richness")
   
 genus.richness<-maxn.data%>%
+  filter(maxn>0)%>%
   dplyr::group_by(campaignid,sample,status,location,site,latitude,longitude)%>%
   dplyr::summarise(total.abundance=length(unique(genus)))%>%
   ungroup()%>%
@@ -619,12 +622,24 @@ length_metric_data <- reactive({
 ### 5. Summarys ----
   # Maxn ----
 maxn.summary.data <- reactive({
+  req(input$maxn.metric.campaignid.selector)
+  
   life.history<-life.history()
+  
+  maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+    as.data.frame()
+  
+  if (input$maxn.summary.campaignid.selector == "All") {
+    maxn.data
+    
+  } else {
+    maxn.data<-maxn.data%>%
+      filter(campaignid == as.character(input$maxn.summary.campaignid.selector))
+  }
   
   if (input$maxn.summary.groupby=="Species") {
     
-    maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
-      as.data.frame()%>%
+    maxn.data <- maxn.data%>%
       filter(maxn>0)%>%
       dplyr::group_by(family,genus,species)%>%
       dplyr::summarise(total.abundance=sum(maxn),number.of.samples=length(unique(id)))%>%
@@ -636,8 +651,7 @@ maxn.summary.data <- reactive({
   }
   
   if (input$maxn.summary.groupby=="Target group") {
-    maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
-      as.data.frame()%>%
+    maxn.data <- maxn.data%>%
       filter(maxn>0)%>%
       left_join(.,life.history)%>%
       tidyr::replace_na(list(target.group="Non-target"))%>%
@@ -650,8 +664,7 @@ maxn.summary.data <- reactive({
   }
   
   if (input$maxn.summary.groupby=="Trophic group") {
-    maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
-      as.data.frame()%>%
+    maxn.data <- maxn.data%>%
       filter(maxn>0)%>%
       left_join(.,life.history)%>%
       tidyr::replace_na(list(trophic.group="Missing trophic group"))%>%
@@ -666,12 +679,57 @@ maxn.summary.data <- reactive({
 })
 
 output$maxn.summary <- DT::renderDataTable(
-  DT::datatable(maxn.summary.data(), options = list( # [, input$show_vars, drop = FALSE]
+  DT::datatable(maxn.summary.data(), caption = 'Table 2. Species, Target level and Trophic level summaries.',options = list( # [, input$show_vars, drop = FALSE]
     lengthMenu = list(c(10, 25, 50, -1), c('10', '25','50', 'All')),
     pageLength = 15, rownames= FALSE
-  )
+  ), rownames = FALSE
   )
 )
+
+
+maxn.overall.summary.data <- reactive({
+  req(input$maxn.metric.campaignid.selector)
+
+  maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+    as.data.frame()
+  
+  if (input$maxn.summary.campaignid.selector == "All") {
+    maxn.data
+    
+  } else {
+    maxn.data<-maxn.data%>%
+      filter(campaignid == as.character(input$maxn.summary.campaignid.selector))
+  }
+  
+  maxn.overalldata <- maxn.data%>%
+    filter(maxn>0)%>%
+    dplyr::group_by(campaignid)%>%
+    dplyr::summarise(total.abundance=sum(maxn),species.richness=length(unique(scientific)),family.richness=length(unique(family)),genus.richness=length(unique(genus)),number.of.samples=length(unique(id)))%>%
+    ungroup()%>%
+    arrange(campaignid)%>%
+    dplyr::rename('Campaign'=campaignid,
+                  'Total abundance'=total.abundance,
+                  'Species richness'=species.richness,
+                  'Family richness'=family.richness,
+                  'Genus richness'=genus.richness,
+                  'Number of samples'=number.of.samples)
+  
+  maxn.overalldata
+})
+  
+output$maxn.overall.summary <- DT::renderDataTable(
+  
+  DT::datatable(maxn.overall.summary.data(),  caption = 'Table 1. Campaign level summary.',
+                options = list(dom = 't')
+  
+  #DT::datatable(maxn.overall.summary.data(), options = list( # [, input$show_vars, drop = FALSE]
+    #lengthMenu = list(c(10, 25, 50, -1), c('10', '25','50', 'All')),
+   # pageLength = 15, rownames= FALSE
+  , rownames = FALSE
+  )
+)  
+
+
 
 maxn.summary <- reactive({
   maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
@@ -762,6 +820,7 @@ output$maxn.status.plot <- renderPlot({
     stat_summary(fun.y=mean, geom="bar",colour="black") +
     stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
     geom_hline(aes(yintercept=0))+
+    scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
     xlab("")+
     ylab("Average abundance per stereo-BRUV \n(+/- SE)")+
     theme_bw()+
@@ -837,6 +896,7 @@ output$metrics.maxn.status.plot <- renderPlot({
     stat_summary(fun.y=mean, geom="bar",colour="black") +
     stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
     geom_hline(aes(yintercept=0))+
+    scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
     xlab("")+
     ylab("Per stereo-BRUV \n(+/- SE)")+
     theme_bw()+
@@ -974,8 +1034,9 @@ output$maxn.metric.spatial.plot <- renderLeaflet({
 ### 7. Length plots ----
   # Length histogram ----
 output$length.histogram <- renderPlot({
-  ggplot(length_species_data(),aes(x = length,colour = status,fill=status))+
-    geom_histogram(alpha=0.5, position="identity",binwidth=input$length.binwidth)+
+  ggplot(length_species_data(),aes(x = length,  fill=status), col = "black",alpha=0.5)+
+    scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
+    geom_histogram(alpha=0.5, position="identity",binwidth=input$length.binwidth,col="black")+
     xlab("Length (mm)") + ylab("Count") +
     theme_bw() +
     scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
@@ -988,6 +1049,7 @@ output$length.status.plot <- renderPlot({
   ggplot(length_species_data(),aes(x = factor(status), y = length,  fill = status, notch=FALSE, outlier.shape = NA),alpha=0.5) + 
     theme( panel.background = element_blank(),axis.line = element_line(colour = "black"))+
     stat_boxplot(geom='errorbar')+
+    scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
     geom_boxplot(outlier.color = NA, notch=FALSE)+
     stat_summary(fun.y=mean, geom="point", shape=23, size=4)+ #this is adding the dot for the mean
     theme_bw()+
@@ -1021,6 +1083,7 @@ output$length.metric.status <- renderPlot({
     stat_summary(fun.y=mean, geom="point", shape=23, size=4, position=posn.d)+ #this is adding the dot for the mean
     theme_bw()+
     xlab("") + ylab("Length (mm)") +
+    scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
     ggtitle("Plot of length by Status") +
     theme_bw()+
     scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
@@ -1123,6 +1186,7 @@ ggplot(mass.metrics, aes(x = level, y=total.mass, fill = status, group=status)) 
   geom_hline(aes(yintercept=0))+
   xlab("")+
   ylab("Per stereo-BRUV \n(+/- SE)")+
+  scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
   theme_bw()+
   Theme1+
   scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
