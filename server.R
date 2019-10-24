@@ -22,6 +22,15 @@ function(input, output, session) {
     )
   }
   
+  
+  output$image.workflow <- renderImage({
+      return(list(
+        src = "images/globalarchive-workflow.png",
+        contentType = "image/png",
+        alt = "Workflow"
+      ))
+  }, deleteFile = FALSE)
+  
 ######################### DATA #########################
 ### 1. Read in data and campaign id drop downs----
   # MaxN ----
