@@ -21,7 +21,7 @@ navbarPage(
         
       fileInput("complete.habitat", "Upload complete habitat FST File",
                 accept = c("image/vnd.fst",
-                           ".fst"))
+                           ".fst")), width = 3
 #  ,
 #      textInput("worksheet.name", label = ("Life history googlesheet name"), value = "Australia.life.history"),
 #      textInput("sheet.name", label = ("Life history sheet name"), value = "australia.life.history")
