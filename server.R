@@ -117,7 +117,7 @@ function(input, output, session) {
     updateSelectInput(session, "habitat.campaignid.selector", choices = options, selected = "All")
   })
   
-### Read in life history google sheet ----
+### Read in life history sheet ----
 life.history<-  reactive({
   
   
@@ -196,8 +196,33 @@ species.richness<-maxn.data%>%
   ungroup()%>%
   mutate(metric="Species richness")
 
-assemblage <- bind_rows(total.abundance, species.richness)
-assemblage
+family.richness<-maxn.data%>%
+  dplyr::group_by(campaignid,sample,status,location,site,latitude,longitude)%>%
+  dplyr::summarise(total.abundance=length(unique(family)))%>%
+  ungroup()%>%
+  mutate(metric="Family richness")
+  
+genus.richness<-maxn.data%>%
+  dplyr::group_by(campaignid,sample,status,location,site,latitude,longitude)%>%
+  dplyr::summarise(total.abundance=length(unique(genus)))%>%
+  ungroup()%>%
+  mutate(metric="Genus richness")
+
+assemblage <- bind_rows(total.abundance, species.richness,family.richness,genus.richness)
+
+if (input$maxn.metric.campaignid.selector == "All") {
+  assemblage
+  
+} else {
+  campaign.name <- input$maxn.metric.campaignid.selector
+  assemblage<-assemblage%>%
+    filter(campaignid == as.character(campaign.name))%>%
+    glimpse()
+  
+  unique(assemblage$campaignid)
+  
+  assemblage
+}
 
 })
 
@@ -790,10 +815,23 @@ output$maxn.status.plot <- renderPlot({
   # Maxn metric plot Status ----
 output$metrics.maxn.status.plot <- renderPlot({
   
-  maxn.per.sample<-assemblage_metric_data()%>%
-    as.data.frame()%>%
-    filter(metric == input$metrics.selector)%>%
-    glimpse()
+  if (input$maxn.metric.campaignid.selector == "All") {
+    maxn.per.sample<-maxn_metric_data()%>%
+      as.data.frame()%>%
+      filter(metric == input$maxn.metric.selector)
+    
+  } else {
+    campaign.name <- input$maxn.metric.campaignid.selector
+    maxn.per.sample<-maxn_metric_data()%>%
+      as.data.frame()%>%
+      filter(metric == input$maxn.metric.selector)%>%
+      filter(campaignid==input$maxn.metric.campaignid.selector)
+  }
+  
+  # maxn.per.sample<-maxn_metric_data()%>%
+  #   as.data.frame()%>%
+  #   filter(metric == input$maxn.metric.selector)%>%
+  #   glimpse()
   
   ggplot(maxn.per.sample, aes(x = status,y=total.abundance, fill = status)) + 
     stat_summary(fun.y=mean, geom="bar",colour="black") +
@@ -809,12 +847,11 @@ output$metrics.maxn.status.plot <- renderPlot({
 
   # Maxn metric plot Location ----
 
-output$assemblage.maxn.location.plot <- renderPlot({
+output$maxn.metric.location.plot <- renderPlot({
   
-  maxn.per.sample<-assemblage_metric_data()%>%
+  maxn.per.sample<-maxn_metric_data()%>%
     as.data.frame()%>%
-    filter(metric == input$metrics.selector)%>%
-    glimpse()
+    filter(metric == input$maxn.metric.selector)
   
   ggplot(maxn.per.sample, aes(x = location,y=total.abundance)) + 
     stat_summary(fun.y=mean, geom="bar",fill="white",colour="black") +
@@ -830,12 +867,10 @@ output$assemblage.maxn.location.plot <- renderPlot({
 })
 
   # Maxn metric plot Site ----
-output$assemblage.maxn.site.plot <- renderPlot({
-  maxn.per.sample<-assemblage_metric_data()%>%
+output$maxn.metric.site.plot <- renderPlot({
+  maxn.per.sample<-maxn_metric_data()%>%
     as.data.frame()%>%
-    filter(metric == input$metrics.selector)%>%
-    glimpse()
-  
+    filter(metric == input$maxn.metric.selector)
   ggplot(maxn.per.sample, aes(x = site,y=total.abundance)) + 
     stat_summary(fun.y=mean, geom="bar",fill="white",colour="black") +
     stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
@@ -849,16 +884,15 @@ output$assemblage.maxn.site.plot <- renderPlot({
 })
 
   # Maxn metric plot Status ----
-output$metrics.maxn.status.plot <- renderPlot({
+output$maxn.metric.status.plot <- renderPlot({
   
   maxn.per.sample<-maxn_metric_data()%>%
     as.data.frame()%>%
-    filter(metric == input$metrics.maxn.metric.selector)%>%
-    glimpse()
+    filter(metric == input$maxn.metric.selector)
   
   posn.d <- position_dodge(0.9)
     
-    ggplot(maxn.per.sample, aes(x = level, y=total.abundance, fill=status, group=status)) + 
+    ggplot(maxn.per.sample, aes(x = status, y=total.abundance, fill=status, group=status)) + 
       stat_summary(fun.y=mean, geom="bar",colour="black",position="dodge") +
       stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1,position=posn.d) +
       geom_hline(aes(yintercept=0))+
@@ -903,12 +937,11 @@ output$maxn.spatial.plot <- renderLeaflet({
 
   # Maxn metric spatial plot ----
 # Create spatial plot
-output$assemblage.maxn.spatial.plot <- renderLeaflet({
+output$maxn.metric.spatial.plot <- renderLeaflet({
   
-  data<-assemblage_metric_data()%>%
+  data<-maxn_metric_data()%>%
     as.data.frame()%>%
-    filter(metric == input$assemblage.maxn.metric.selector)%>%
-    glimpse()
+    filter(metric == input$maxn.metric.selector)
   
   map <- leaflet(data) %>%
     addTiles()%>%

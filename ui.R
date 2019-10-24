@@ -75,13 +75,13 @@ navbarPage(
       sidebarPanel(
         selectInput(inputId = "maxn.metric.campaignid.selector", label = "CampaignID",
                     choices = NULL),
-        selectInput("metric.selector", "Select metric to plot", choices = c("Total abundance",
+        selectInput("maxn.metric.selector", "Select metric to plot", choices = c("Total abundance",
                                                                              "Species richness",
                                                                              "Abundance by trophic group",
                                                                              "Abundance by target group"), multiple = FALSE),width = 3),
       
       mainPanel(leafletOutput(outputId = "maxn.metric.spatial.plot", height = "500px"),
-                plotOutput(outputId = "maxn.metric.maxn.status.plot", height = "300px"),
+                plotOutput(outputId = "maxn.metric.status.plot", height = "300px"),
                 plotOutput(outputId = "maxn.metric.location.plot", height = "300px"),
                 plotOutput(outputId = "maxn.metric.site.plot", height = "300px"))))
 ,
