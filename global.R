@@ -38,9 +38,9 @@ library(extrafont)
 options(shiny.maxRequestSize=1000*1024^2)
 
 # Load font
-loadfonts(device="win")  
-#font_import()
-fonts()   
+# loadfonts(device="win")  
+# font_import()
+# fonts()   
 
 # Theme for plotting ----
 Theme1 <-
@@ -61,7 +61,7 @@ Theme1 <-
     axis.line.y=element_line(colour="black", size=0.5,linetype='solid'),
     strip.background = element_blank(),
     plot.title = element_text(color="black", size=14, face="bold.italic"),
-    text=element_text(family="sans serif", size=14))
+    text=element_text(family="Times New Roman", size=14))
 
 
 # functions for summarising data on plots ----

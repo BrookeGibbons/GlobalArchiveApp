@@ -887,11 +887,6 @@ output$metrics.maxn.status.plot <- renderPlot({
       filter(campaignid==input$maxn.metric.campaignid.selector)
   }
   
-  # maxn.per.sample<-maxn_metric_data()%>%
-  #   as.data.frame()%>%
-  #   filter(metric == input$maxn.metric.selector)%>%
-  #   glimpse()
-  
   ggplot(maxn.per.sample, aes(x = status,y=total.abundance, fill = status)) + 
     stat_summary(fun.y=mean, geom="bar",colour="black") +
     stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
@@ -958,6 +953,7 @@ output$maxn.metric.status.plot <- renderPlot({
       geom_hline(aes(yintercept=0))+
       xlab("")+
       ylab("Per stereo-BRUV \n(+/- SE)")+
+      scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
       theme_bw()+
       scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
       Theme1+theme(panel.grid = element_blank(), panel.border = element_blank(), axis.line = element_line(colour = "black"))+
