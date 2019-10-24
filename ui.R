@@ -27,7 +27,7 @@ navbarPage(
 #      textInput("sheet.name", label = ("Life history sheet name"), value = "australia.life.history")
 ),
       
-    mainPanel(imageOutput("image.workflow", height = "30%")))),
+    mainPanel(imageOutput("image.workflow", width = 300)))),
   
   # MaxN summary Tab ----
   tabPanel(
