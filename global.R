@@ -92,7 +92,7 @@ colors <- c("#d94c45","#78807a","#bd6539","#d67cc9","#d99445","#4eb570","#faef52
 # Deploy to shiny app website ----
 # Set up account info to connect to shinyapps
 # library(rsconnect)
-# rsconnect::setAccountInfo(name='brookegibbons',
-#                           token='23916448A9BBBA3709D39E858B6288BE',
-#                           secret='JIKZ2b9L3uhCMZi4KYXM7D9xFIBROL72DDgyQH8y') # connect to shinyapps
+# rsconnect::setAccountInfo(name='globalarchive',
+#                           token='6CEEEFEBB8A0CEB1997210A7E9B6B94A',
+#                           secret='2SI4c31ff1LWL44+IPmT3zsl4IOps7wDY8uiRrNR')
 # deployApp()
