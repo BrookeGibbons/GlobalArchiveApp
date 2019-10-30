@@ -39,7 +39,7 @@ function(input, output, session) {
     #req(input$complete.maxn)
     
     if(is.null(input$complete.maxn)){
-    maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+    maxn.data <- fst::read_fst("data/montebello.example.complete.maxn.fst")%>%
         as.data.frame()}
     else{
     # Read in fst data
@@ -68,7 +68,7 @@ function(input, output, session) {
     #req(input$complete.length)
     
     if(is.null(input$complete.length)){
-      length.data <- fst::read_fst("montebello.example.complete.length.fst")%>%
+      length.data <- fst::read_fst("data/montebello.example.complete.length.fst")%>%
         as.data.frame()}
     else{
       # Read in fst data
@@ -96,13 +96,20 @@ function(input, output, session) {
   
   # Mass ----
   observe({
-      req(input$complete.mass)
+    if(is.null(input$complete.mass)){
+      mass.data <- fst::read_fst("data/montebello.example.complete.mass.fst")%>%
+        dplyr::mutate(key="mass")%>%
+        dplyr::mutate(value=mass.g)%>%
+        as.data.frame()}
+    else{
+      # Read in fst data
+      mass.data<-fst::read_fst(input$complete.mass$datapath)%>%
+        dplyr::mutate(key="mass")%>%
+        dplyr::mutate(value=mass.g)%>%
+        as.data.frame()}
     
-    # Read in fst data
-    mass.data<-fst::read_fst(input$complete.mass$datapath)%>%
-      dplyr::mutate(key="mass")%>%
-      dplyr::mutate(value=mass.g)%>%
-      as.data.frame()
+    mass.data<-mass.data
+
     
     # Create list of campaigns
     options <- mass.data %>%
@@ -117,11 +124,15 @@ function(input, output, session) {
   
   # Habitat ----
   observe({
-    req(input$complete.habitat)
+    if(is.null(input$complete.habitat)){
+      hab.data <- fst::read_fst("data/montebello.example.complete.habitat.fst")%>%
+        as.data.frame()}
+    else{
+      # Read in fst data
+      hab.data<-fst::read_fst(input$complete.habitat$datapath)%>%
+        as.data.frame()}
     
-    # Read in fst data
-    hab.data<-fst::read_fst(input$complete.habitat$datapath)%>%
-      as.data.frame()
+    hab.data<-hab.data
     
     # Create list of campaigns
     options <- hab.data %>%
@@ -138,7 +149,7 @@ function(input, output, session) {
 life.history<-  reactive({
   
   
-  life.history<-read.csv("Australia.life.history - australia.life.history.csv")%>%
+  life.history<-read.csv("data/Australia.life.history - australia.life.history.csv")%>%
         mutate(trophic.group=ga.capitalise(RLS.trophic.group))%>%
         dplyr::mutate(target.group=str_replace_all(.$Fishing.type,c("R"="Recreational","C"="Commercial","B/"="","B"="Bycatch","Commercial/Recreational"="Target","Commercial"="Target","Recreational"="Target")))%>%
         dplyr::mutate(trophic.group=str_replace_all(.$trophic.group,c("NANA"="Missing trophic group","NA"="Missing trophic group")))%>%
@@ -174,7 +185,7 @@ life.history<-  reactive({
     req(input$maxn.campaignid.selector)
     
     if(is.null(input$complete.maxn)){
-      maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+      maxn.data <- fst::read_fst("data/montebello.example.complete.maxn.fst")%>%
         as.data.frame()}
     else{
       # Read in fst data
@@ -200,7 +211,7 @@ life.history<-  reactive({
   req(input$maxn.metric.campaignid.selector)
 
    if(is.null(input$complete.maxn)){
-     maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+     maxn.data <- fst::read_fst("data/montebello.example.complete.maxn.fst")%>%
        as.data.frame()}
    else{
      # Read in fst data
@@ -334,7 +345,7 @@ length_data <- reactive({
   req(input$length.campaignid.selector)
   
   if(is.null(input$complete.length)){
-    length.data <- fst::read_fst("montebello.example.complete.length.fst")%>%
+    length.data <- fst::read_fst("data/montebello.example.complete.length.fst")%>%
       as.data.frame()}
   else{
     # Read in fst data
@@ -357,7 +368,7 @@ length_metric_data <- reactive({
   req(input$length.metric.campaignid.selector)
   
   if(is.null(input$complete.length)){
-    length.data <- fst::read_fst("montebello.example.complete.length.fst")%>%
+    length.data <- fst::read_fst("data/montebello.example.complete.length.fst")%>%
       as.data.frame()}
   else{
     # Read in fst data
@@ -401,8 +412,19 @@ length_metric_data <- reactive({
   mass_data <- reactive({
     req(input$mass.campaignid.selector)
     
-    mass.data <- fst::read_fst(input$complete.mass$datapath)%>%
-      as.data.frame()
+    if(is.null(input$complete.mass)){
+      mass.data <- fst::read_fst("data/montebello.example.complete.mass.fst")%>%
+        dplyr::mutate(key="mass")%>%
+        dplyr::mutate(value=mass.g)%>%
+        as.data.frame()}
+    else{
+      # Read in fst data
+      mass.data<-fst::read_fst(input$complete.mass$datapath)%>%
+        dplyr::mutate(key="mass")%>%
+        dplyr::mutate(value=mass.g)%>%
+        as.data.frame()}
+    
+    mass.data<-mass.data
     
     if (input$mass.campaignid.selector == "All") {
       mass.data
@@ -416,8 +438,15 @@ length_metric_data <- reactive({
   # Habitat ----
   habitat_data <- reactive({
     req(input$habitat.campaignid.selector)
-    hab.data <- fst::read_fst(input$complete.habitat$datapath)%>%
-      as.data.frame()
+    if(is.null(input$complete.habitat)){
+      hab.data <- fst::read_fst("data/montebello.example.complete.habitat.fst")%>%
+        as.data.frame()}
+    else{
+      # Read in fst data
+      hab.data<-fst::read_fst(input$complete.habitat$datapath)%>%
+        as.data.frame()}
+    
+    hab.data<-hab.data
     
     if (input$habitat.campaignid.selector == "All") {
       hab.data
@@ -679,7 +708,7 @@ maxn.summary.data <- reactive({
   life.history<-life.history()
   
   if(is.null(input$complete.maxn)){
-    maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+    maxn.data <- fst::read_fst("data/montebello.example.complete.maxn.fst")%>%
       as.data.frame()}
   else{
     # Read in fst data
@@ -753,7 +782,7 @@ maxn.overall.summary.data <- reactive({
   req(input$maxn.metric.campaignid.selector)
 
   if(is.null(input$complete.maxn)){
-    maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+    maxn.data <- fst::read_fst("data/montebello.example.complete.maxn.fst")%>%
       as.data.frame()}
   else{
     # Read in fst data
@@ -805,7 +834,7 @@ output$maxn.overall.summary <- DT::renderDataTable(
 
 maxn.summary <- reactive({
   if(is.null(input$complete.maxn)){
-    maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+    maxn.data <- fst::read_fst("data/montebello.example.complete.maxn.fst")%>%
       as.data.frame()}
   else{
     # Read in fst data
@@ -832,7 +861,7 @@ length.summary.data <- reactive({
   life.history<-life.history()
   
   if(is.null(input$complete.length)){
-    length.data <- fst::read_fst("montebello.example.complete.length.fst")%>%
+    length.data <- fst::read_fst("data/montebello.example.complete.length.fst")%>%
       as.data.frame()}
   else{
     # Read in fst data

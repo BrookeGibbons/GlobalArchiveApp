@@ -6,7 +6,7 @@ navbarPage(
       sidebarPanel(
         
   # File uploads ----
-        
+        h5("Upload your own data or use example montebello data already uploaded."),
         fileInput("complete.maxn", "Upload complete maxn FST File",
                   accept = c("image/vnd.fst",
                              ".fst")),
