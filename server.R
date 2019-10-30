@@ -36,11 +36,17 @@ function(input, output, session) {
   # MaxN ----
   observe({
     
-    req(input$complete.maxn)
+    #req(input$complete.maxn)
     
+    if(is.null(input$complete.maxn)){
+    maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+        as.data.frame()}
+    else{
     # Read in fst data
     maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
-      as.data.frame()
+      as.data.frame()}
+    
+   maxn.data<-maxn.data
     
     # Create list of campaigns
     options <- maxn.data %>%
@@ -59,11 +65,21 @@ function(input, output, session) {
     
   # Length ----
   observe({
-    req(input$complete.length)
+    #req(input$complete.length)
+    
+    if(is.null(input$complete.length)){
+      length.data <- fst::read_fst("montebello.example.complete.length.fst")%>%
+        as.data.frame()}
+    else{
+      # Read in fst data
+      length.data<-fst::read_fst(input$complete.length$datapath)%>%
+        as.data.frame()}
+    
+    length.data<-length.data
     
     # Read in fst data
-    length.data<-fst::read_fst(input$complete.length$datapath)%>%
-      as.data.frame()
+    # length.data<-fst::read_fst(input$complete.length$datapath)%>%
+    #   as.data.frame()
     
     # Create list of campaigns
     options <- length.data %>%
@@ -157,8 +173,18 @@ life.history<-  reactive({
   maxn_data <- reactive({
     req(input$maxn.campaignid.selector)
     
-    maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
-      as.data.frame()
+    if(is.null(input$complete.maxn)){
+      maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+        as.data.frame()}
+    else{
+      # Read in fst data
+      maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+        as.data.frame()}
+    
+    maxn.data<-maxn.data
+    
+    # maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+    #   as.data.frame()
     
     if (input$maxn.campaignid.selector == "All") {
       maxn.data
@@ -173,8 +199,20 @@ life.history<-  reactive({
  maxn_metric_data <- reactive({
   req(input$maxn.metric.campaignid.selector)
 
-  maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
-    as.data.frame()
+   if(is.null(input$complete.maxn)){
+     maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+       as.data.frame()}
+   else{
+     # Read in fst data
+     maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+       as.data.frame()}
+   
+   maxn.data<-maxn.data
+   
+   
+  # maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+  #   as.data.frame()
+  
   
   if (input$maxn.metric.campaignid.selector == "All") {
     maxn.data
@@ -295,8 +333,15 @@ if (input$maxn.metric.campaignid.selector == "All") {
 length_data <- reactive({
   req(input$length.campaignid.selector)
   
-  length.data <- fst::read_fst(input$complete.length$datapath)%>%
-    as.data.frame()
+  if(is.null(input$complete.length)){
+    length.data <- fst::read_fst("montebello.example.complete.length.fst")%>%
+      as.data.frame()}
+  else{
+    # Read in fst data
+    length.data<-fst::read_fst(input$complete.length$datapath)%>%
+      as.data.frame()}
+  
+  length.data<-length.data
   
   if (input$length.campaignid.selector == "All") {
     length.data
@@ -311,8 +356,15 @@ length_data <- reactive({
 length_metric_data <- reactive({
   req(input$length.metric.campaignid.selector)
   
-  length <- fst::read_fst(input$complete.length$datapath)%>%
-    as.data.frame()
+  if(is.null(input$complete.length)){
+    length.data <- fst::read_fst("montebello.example.complete.length.fst")%>%
+      as.data.frame()}
+  else{
+    # Read in fst data
+    length.data<-fst::read_fst(input$complete.length$datapath)%>%
+      as.data.frame()}
+  
+  length<-length.data
   
   if (input$length.metric.campaignid.selector == "All") {
     length<-length
@@ -626,8 +678,18 @@ maxn.summary.data <- reactive({
   
   life.history<-life.history()
   
-  maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
-    as.data.frame()
+  if(is.null(input$complete.maxn)){
+    maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+      as.data.frame()}
+  else{
+    # Read in fst data
+    maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+      as.data.frame()}
+  
+  maxn.data<-maxn.data
+  
+  # maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+  #   as.data.frame()
   
   if (input$maxn.summary.campaignid.selector == "All") {
     maxn.data
@@ -690,8 +752,18 @@ output$maxn.summary <- DT::renderDataTable(
 maxn.overall.summary.data <- reactive({
   req(input$maxn.metric.campaignid.selector)
 
-  maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
-    as.data.frame()
+  if(is.null(input$complete.maxn)){
+    maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+      as.data.frame()}
+  else{
+    # Read in fst data
+    maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+      as.data.frame()}
+  
+  maxn.data<-maxn.data
+  
+  # maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+    # as.data.frame()
   
   if (input$maxn.summary.campaignid.selector == "All") {
     maxn.data
@@ -732,8 +804,18 @@ output$maxn.overall.summary <- DT::renderDataTable(
 
 
 maxn.summary <- reactive({
-  maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
-    as.data.frame()
+  if(is.null(input$complete.maxn)){
+    maxn.data <- fst::read_fst("montebello.example.complete.maxn.fst")%>%
+      as.data.frame()}
+  else{
+    # Read in fst data
+    maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+      as.data.frame()}
+  
+  maxn.data<-maxn.data
+  
+  # maxn.data <- fst::read_fst(input$complete.maxn$datapath)%>%
+  #   as.data.frame()
 })
 
 output$overall.abundance <- renderText({ 
@@ -749,9 +831,19 @@ output$species.richness <- renderText({
 length.summary.data <- reactive({
   life.history<-life.history()
   
+  if(is.null(input$complete.length)){
+    length.data <- fst::read_fst("montebello.example.complete.length.fst")%>%
+      as.data.frame()}
+  else{
+    # Read in fst data
+    length.data<-fst::read_fst(input$complete.length$datapath)%>%
+      as.data.frame()}
+  
+  sum.length.data<-length.data
+  
   if (input$length.summary.groupby=="Species") {
-    length.data <- fst::read_fst(input$complete.length$datapath)%>%
-      as.data.frame()%>%
+    
+    length.data <- sum.length.data%>%
       filter(length>0)%>%
       dplyr::group_by(family,genus,species)%>%
       dplyr::summarise(Total.measured=sum(number),Number.of.samples=length(unique(id)),Mean.length=mean(length),Min.length=min(length),Max.length=max(length))%>%
@@ -766,8 +858,7 @@ length.summary.data <- reactive({
   }
   
   if (input$length.summary.groupby=="Target group") {
-    length.data <- fst::read_fst(input$complete.length$datapath)%>%
-      as.data.frame()%>%
+    length.data <- sum.length.data%>%
       filter(length>0)%>%
       left_join(life.history)%>%
       replace_na(list(target.group="Non-target"))%>%
@@ -782,8 +873,7 @@ length.summary.data <- reactive({
   }
   
   if (input$length.summary.groupby=="Trophic group") {
-    length.data <- fst::read_fst(input$complete.length$datapath)%>%
-      as.data.frame()%>%
+    length.data <- sum.length.data%>%
       filter(length>0)%>%
       left_join(life.history)%>%
       replace_na(list(trophic.group="Missing trophic group"))%>%

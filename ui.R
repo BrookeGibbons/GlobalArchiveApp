@@ -87,9 +87,10 @@ navbarPage(
         selectInput("maxn.metric.selector", "Select metric to plot", choices = c("Total abundance",
                                                                              "Family richness",
                                                                              "Genus richness",
-                                                                             "Species richness",
-                                                                             "Abundance by trophic group",
-                                                                             "Abundance by target group"), multiple = FALSE),width = 3),
+                                                                             "Species richness"#,
+                                                                             #"Abundance by trophic group",
+                                                                             #"Abundance by target group"
+                                                                             ), multiple = FALSE),width = 3),
       
       mainPanel(leafletOutput(outputId = "maxn.metric.spatial.plot", height = "500px"),
                 plotOutput(outputId = "maxn.metric.status.plot", height = "300px"),
