@@ -61,7 +61,10 @@ navbarPage(
         # Select CampaignID
         selectInput(inputId = "maxn.campaignid.selector", label = "CampaignID",
                     choices = NULL),
-        
+        # Choose taxa or common name
+        selectInput("maxn.com.spe.selector", "Plot by Family, Genus and Species or by Common name", 
+                    choices = c("Family, Genus, Species",
+                                "Common name"), multiple = FALSE),
         # Select Family, Genus and Species
         htmlOutput("maxn.family.selector"),
         htmlOutput("maxn.genus.selector"),

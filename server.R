@@ -129,7 +129,7 @@ life.history<-  reactive({
         tidyr::replace_na(list(target.group="Non-target",trophic.group="Missing trophic group"))%>%
         dplyr::mutate(target.group = factor(target.group, levels = c("Target","Bycatch","Non-target")))%>%
         dplyr::mutate(target.group = fct_relevel(target.group, "Target","Bycatch","Non-target"))%>%
-        dplyr::select(Family,Genus,Species,trophic.group,target.group)%>%
+        dplyr::select(Family,Genus,Species,trophic.group,target.group,Australian.common.name)%>%
         ga.clean.names()
   
   #   req(input$worksheet.name, input$sheet.name)
@@ -647,7 +647,7 @@ maxn.summary.data <- reactive({
       arrange(-total.abundance)%>%
       left_join(.,life.history)%>%
       tidyr::replace_na(list(target.group="Non-target",trophic.group="Missing trophic group"))%>%
-      dplyr::rename(Family=family,Genus=genus,Species=species,'Total abundance'=total.abundance,'Number of samples'=number.of.samples,'Trophic group'=trophic.group,'Target group'=target.group)
+      dplyr::rename(Family=family,Genus=genus,Species=species,'Total abundance'=total.abundance,'Number of samples'=number.of.samples,'Trophic group'=trophic.group,'Target group'=target.group,'Common name'=australian.common.name)
   }
   
   if (input$maxn.summary.groupby=="Target group") {
