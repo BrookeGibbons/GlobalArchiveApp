@@ -62,13 +62,18 @@ navbarPage(
         selectInput(inputId = "maxn.campaignid.selector", label = "CampaignID",
                     choices = NULL),
         # Choose taxa or common name
-        selectInput("maxn.com.spe.selector", "Plot by Family, Genus and Species or by Common name", 
-                    choices = c("Family, Genus, Species",
+        selectInput("maxn.com.spe.selector", "Plot by species by scientifc or common name", 
+                    choices = c("Scientific name",
                                 "Common name"), multiple = FALSE),
         # Select Family, Genus and Species
+        htmlOutput("maxn.common.selector"),
         htmlOutput("maxn.family.selector"),
         htmlOutput("maxn.genus.selector"),
-        htmlOutput("maxn.species.selector"),width = 3),
+        htmlOutput("maxn.species.selector"),
+        selectInput("maxn.plot.selector", "Choose plot theme", 
+                     choices = c("GlobalArchive",
+                                 "Black and white"), multiple = FALSE),
+        width = 3),
       
       # Plots
       mainPanel(
@@ -84,13 +89,18 @@ navbarPage(
       sidebarPanel(
         selectInput(inputId = "maxn.metric.campaignid.selector", label = "CampaignID",
                     choices = NULL),
-        selectInput("maxn.metric.selector", "Select metric to plot", choices = c("Total abundance",
-                                                                             "Family richness",
-                                                                             "Genus richness",
-                                                                             "Species richness"#,
-                                                                             #"Abundance by trophic group",
-                                                                             #"Abundance by target group"
-                                                                             ), multiple = FALSE),width = 3),
+        selectInput("maxn.metric.selector", "Select metric to plot", 
+                    choices = c("Total abundance",
+                                "Family richness",
+                                "Genus richness",
+                                "Species richness"#,
+                                #"Abundance by trophic group",
+                                #"Abundance by target group"
+                                ), multiple = FALSE),
+        selectInput("maxn.metric.plot.selector", "Choose plot theme",
+                    choices = c("GlobalArchive",
+                                "Black and white"), multiple = FALSE),
+        width = 3),
       
       mainPanel(leafletOutput(outputId = "maxn.metric.spatial.plot", height = "500px"),
                 plotOutput(outputId = "maxn.metric.status.plot", height = "300px"),

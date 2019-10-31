@@ -148,7 +148,6 @@ function(input, output, session) {
 ### Read in life history sheet ----
 life.history<-  reactive({
   
-  
   life.history<-read.csv("data/Australia.life.history - australia.life.history.csv")%>%
         mutate(trophic.group=ga.capitalise(RLS.trophic.group))%>%
         dplyr::mutate(target.group=str_replace_all(.$Fishing.type,c("R"="Recreational","C"="Commercial","B/"="","B"="Bycatch","Commercial/Recreational"="Target","Commercial"="Target","Recreational"="Target")))%>%
@@ -159,22 +158,6 @@ life.history<-  reactive({
         dplyr::select(Family,Genus,Species,trophic.group,target.group,Australian.common.name)%>%
         ga.clean.names()
   
-  #   req(input$worksheet.name, input$sheet.name)
-  #   
-  # 
-  # gs_auth(new_user = TRUE) # force access
-  # 
-  #   life.history <- gs_title(input$worksheet.name)%>%
-  #     gs_read(ws = input$sheet.name)%>%
-  #     mutate(trophic.group=ga.capitalise(RLS.trophic.group))%>%
-  #     dplyr::mutate(target.group=str_replace_all(.$Fishing.type,c("R"="Recreational","C"="Commercial","B/"="","B"="Bycatch","Commercial/Recreational"="Target","Commercial"="Target","Recreational"="Target")))%>%
-  #     dplyr::mutate(trophic.group=str_replace_all(.$trophic.group,c("NANA"="Missing trophic group","NA"="Missing trophic group")))%>%
-  #     tidyr::replace_na(list(target.group="Non-target",trophic.group="Missing trophic group"))%>%
-  #     dplyr::mutate(target.group = factor(target.group, levels = c("Target","Bycatch","Non-target")))%>%
-  #     dplyr::mutate(target.group = fct_relevel(target.group, "Target","Bycatch","Non-target"))%>%
-  #     dplyr::select(Family,Genus,Species,trophic.group,target.group)%>%
-  #     ga.clean.names()
-    
     life.history
     
   })
@@ -458,9 +441,56 @@ length_metric_data <- reactive({
   })
   
 ### 3. Drop downs for species plots ----
+  # Common names for MaxN ----
+  output$maxn.common.selector <- renderUI({
+    req(input$maxn.com.spe.selector == "Common name")
+    
+    names<-life.history()%>%
+      dplyr::select(family,genus,species,australian.common.name)%>%
+      glimpse()
+    
+    if (input$maxn.campaignid.selector == "All") {
+        
+      df<-maxn_data()%>%
+        left_join(names)%>%
+        glimpse()
+      
+      options <- df %>%
+        dplyr::filter(maxn>0)%>%
+        dplyr::distinct(australian.common.name) %>%
+        dplyr::filter(!australian.common.name%in%c("NA",NA,""))%>%
+        pull("australian.common.name")%>%
+        sort()
+      
+      create_dropdown("maxn.common.selector", options, "Common name:")
+      
+    } else {
+      
+      df<-maxn_data()%>%
+        left_join(names)
+      
+      common.to.keep<-df%>%
+        filter(maxn>0)%>%
+        filter(campaignid == input$maxn.campaignid.selector)%>%
+        filter(!australian.common.name%in%c("NA",NA,""))%>%
+        distinct(australian.common.names)
+      
+      options <- df %>%
+        filter(campaignid == input$maxn.campaignid.selector) %>%
+        semi_join(common.to.keep)%>%
+        dplyr::distinct(australian.common.name) %>%
+        pull("australian.common.name")%>%
+        sort()
+      
+      create_dropdown("maxn.common.selector", options, "Common name:")
+    }
+  })
+  
+  
+  
   # Family for MaxN ----
   output$maxn.family.selector <- renderUI({
-    
+    req(input$maxn.com.spe.selector == "Scientific name")
     if (input$maxn.campaignid.selector == "All") {
       df<-maxn_data()
       
@@ -526,8 +556,8 @@ length_metric_data <- reactive({
 
   # Genus for MaxN ----
   output$maxn.genus.selector <- renderUI({
-    req(input$maxn.family.selector)
-    
+    req(input$maxn.family.selector, input$maxn.com.spe.selector == "Scientific name")
+  
     if (input$maxn.campaignid.selector == "All") {
       df<-maxn_data()
       
@@ -598,7 +628,7 @@ length_metric_data <- reactive({
   
   # Species for MaxN ----
   output$maxn.species.selector <- renderUI({
-    req(input$maxn.family.selector, input$maxn.genus.selector)
+    req(input$maxn.family.selector, input$maxn.genus.selector, input$maxn.com.spe.selector == "Scientific name")
     
     if (input$maxn.campaignid.selector == "All") {
       df<-maxn_data()
@@ -629,7 +659,7 @@ length_metric_data <- reactive({
         dplyr::distinct() %>%
         pull("species")%>%
         sort()
-      create_dropdown("maxn.species.selector", choices=options, "Species1:")
+      create_dropdown("maxn.species.selector", choices=options, "Species:")
     }
   })
   
@@ -674,15 +704,30 @@ length_metric_data <- reactive({
 ### 4. Data frames for species plots ----
   # Maxn  ----
  maxn_species_data <- reactive({
-   req(input$maxn.family.selector, input$maxn.genus.selector, input$maxn.species.selector)
+   # req(input$maxn.family.selector, input$maxn.genus.selector, input$maxn.species.selector)
+   names<-life.history()%>%
+     dplyr::select(family,genus,species,australian.common.name)%>%
+     glimpse()
    
+   if(input$maxn.com.spe.selector=="Scientific name"){
+     
    maxn_data() %>%
+    left_join(names)%>%
      dplyr::filter(family == input$maxn.family.selector,
                    genus == input$maxn.genus.selector,
                    species == input$maxn.species.selector
                    )%>%
      select(-c(depth,observer,successful.count,successful.length))%>%
      glimpse()
+     
+   } else {
+     
+     maxn_data() %>%
+       left_join(names)%>%
+       dplyr::filter(australian.common.name == input$maxn.common.selector)%>%
+       select(-c(depth,observer,successful.count,successful.length))%>%
+       glimpse()
+   }
  })
   
   # Length ----
@@ -935,17 +980,38 @@ output$maxn.status.plot <- renderPlot({
     group_by(campaignid,sample,status)%>%
     summarise(maxn=sum(maxn))
   
+  species.name<-unique(maxn_species_data()$species)
+  
+  genus.name<-unique(maxn_species_data()$genus)
+  
+  scientific.name<-paste(genus.name,species.name,sep=" ")
+  
+  common.name<-unique(maxn_species_data()$australian.common.name)
+  
+grob.sci <- grobTree(textGrob(as.character(scientific.name), x=0.01,  y=0.97, hjust=0,
+                            gp=gpar(col="black", fontsize=13, fontface="italic")))
+grob.com <- grobTree(textGrob(as.character(common.name), x=0.01,  y=0.90, hjust=0,
+                          gp=gpar(col="black", fontsize=13)))
+ 
+  if(input$maxn.plot.selector=="Black and white"){
+    scale.theme<-scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))
+  }else{
+    scale.theme<-scale_fill_manual(values = c("Fished" = "grey", "No-take" = "#1470ad"))
+  }
+  
   ggplot(maxn.per.sample, aes(x = status,y=maxn, fill = status)) + 
     stat_summary(fun.y=mean, geom="bar",colour="black") +
     stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
     geom_hline(aes(yintercept=0))+
-    scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
+    scale.theme+
     xlab("")+
     ylab("Average abundance per stereo-BRUV \n(+/- SE)")+
     theme_bw()+
-    scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
-    Theme1+theme(panel.grid = element_blank(), panel.border = element_blank(), axis.line = element_line(colour = "black"))+
-    ggtitle("Plot of abundance by Status")
+    scale_y_continuous(expand = expand_scale(mult = c(0, .2)))+
+    Theme1+
+    ggtitle("Plot of abundance by Status")+
+    annotation_custom(grob.sci)+ 
+    annotation_custom(grob.com)
 })
 
   # Maxn species plot Location ----
@@ -956,6 +1022,19 @@ output$maxn.status.plot <- renderPlot({
       group_by(campaignid,sample,location)%>%
       summarise(maxn=sum(maxn))
     
+    species.name<-unique(maxn_species_data()$species)
+    
+    genus.name<-unique(maxn_species_data()$genus)
+    
+    scientific.name<-paste(genus.name,species.name,sep=" ")
+    
+    common.name<-unique(maxn_species_data()$australian.common.name)
+    
+    grob.sci <- grobTree(textGrob(as.character(scientific.name), x=0.01,  y=0.97, hjust=0,
+                                  gp=gpar(col="black", fontsize=13, fontface="italic")))
+    grob.com <- grobTree(textGrob(as.character(common.name), x=0.01,  y=0.90, hjust=0,
+                                  gp=gpar(col="black", fontsize=13)))
+    
     ggplot(maxn.per.sample, aes(x = location,y=maxn)) + 
       stat_summary(fun.y=mean, geom="bar",fill="white",colour="black") +
       stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
@@ -964,9 +1043,10 @@ output$maxn.status.plot <- renderPlot({
       ylab("Average abundance per stereo-BRUV \n(+/- SE)")+
       theme_bw()+
       Theme1+
-      scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
-      theme(panel.grid = element_blank(), panel.border = element_blank(), axis.line = element_line(colour = "black"))+
-      ggtitle("Plot of abundance by Location")
+      scale_y_continuous(expand = expand_scale(mult = c(0, .2)))+
+      ggtitle("Plot of abundance by Location")+
+      annotation_custom(grob.sci)+ 
+      annotation_custom(grob.com)
     
   })
   
@@ -977,6 +1057,19 @@ output$maxn.status.plot <- renderPlot({
       group_by(campaignid,sample,site)%>%
       summarise(maxn=sum(maxn))
     
+    species.name<-unique(maxn_species_data()$species)
+    
+    genus.name<-unique(maxn_species_data()$genus)
+    
+    scientific.name<-paste(genus.name,species.name,sep=" ")
+    
+    common.name<-unique(maxn_species_data()$australian.common.name)
+    
+    grob.sci <- grobTree(textGrob(as.character(scientific.name), x=0.01,  y=0.97, hjust=0,
+                                  gp=gpar(col="black", fontsize=13, fontface="italic")))
+    grob.com <- grobTree(textGrob(as.character(common.name), x=0.01,  y=0.90, hjust=0,
+                                  gp=gpar(col="black", fontsize=13)))
+    
     ggplot(maxn.per.sample, aes(x = site,y=maxn)) + 
       stat_summary(fun.y=mean, geom="bar",fill="white",colour="black") +
       stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
@@ -985,39 +1078,13 @@ output$maxn.status.plot <- renderPlot({
       ylab("Average abundance per stereo-BRUV \n(+/- SE)")+
       theme_bw()+
       scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
-      Theme1+theme(panel.grid = element_blank(), panel.border = element_blank(), axis.line = element_line(colour = "black"))+
-      ggtitle("Plot of abundance by Site")
+      Theme1+
+      ggtitle("Plot of abundance by Site")+
+      annotation_custom(grob.sci)+ 
+      annotation_custom(grob.com)
     
   })
  
-  # Maxn metric plot Status ----
-output$metrics.maxn.status.plot <- renderPlot({
-  
-  if (input$maxn.metric.campaignid.selector == "All") {
-    maxn.per.sample<-maxn_metric_data()%>%
-      as.data.frame()%>%
-      filter(metric == input$maxn.metric.selector)
-    
-  } else {
-    campaign.name <- input$maxn.metric.campaignid.selector
-    maxn.per.sample<-maxn_metric_data()%>%
-      as.data.frame()%>%
-      filter(metric == input$maxn.metric.selector)%>%
-      filter(campaignid==input$maxn.metric.campaignid.selector)
-  }
-  
-  ggplot(maxn.per.sample, aes(x = status,y=total.abundance, fill = status)) + 
-    stat_summary(fun.y=mean, geom="bar",colour="black") +
-    stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
-    geom_hline(aes(yintercept=0))+
-    scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
-    xlab("")+
-    ylab("Per stereo-BRUV \n(+/- SE)")+
-    theme_bw()+
-    scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
-    Theme1+theme(panel.grid = element_blank(), panel.border = element_blank(), axis.line = element_line(colour = "black"))+
-    ggtitle("Plot of abundance by Status")
-})
 
   # Maxn metric plot Location ----
 
@@ -1027,6 +1094,10 @@ output$maxn.metric.location.plot <- renderPlot({
     as.data.frame()%>%
     filter(metric == input$maxn.metric.selector)
   
+  metric<-as.character(input$maxn.metric.selector)
+  
+  grob.metric <- grobTree(textGrob(metric, x=0.01,  y=0.97, hjust=0, gp=gpar(col="black", fontsize=13)))
+  
   ggplot(maxn.per.sample, aes(x = location,y=total.abundance)) + 
     stat_summary(fun.y=mean, geom="bar",fill="white",colour="black") +
     stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
@@ -1035,16 +1106,24 @@ output$maxn.metric.location.plot <- renderPlot({
     ylab("Per stereo-BRUV \n(+/- SE)")+
     theme_bw()+
     scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
-    Theme1+theme(panel.grid = element_blank(), panel.border = element_blank(), axis.line = element_line(colour = "black"))+
-    ggtitle("Plot of abundance by Location")
+    Theme1+
+    ggtitle("Plot of abundance by Location")+
+    annotation_custom(grob.metric)
+    
   
 })
 
   # Maxn metric plot Site ----
 output$maxn.metric.site.plot <- renderPlot({
+  
   maxn.per.sample<-maxn_metric_data()%>%
     as.data.frame()%>%
     filter(metric == input$maxn.metric.selector)
+  
+  metric<-as.character(input$maxn.metric.selector)
+  
+  grob.metric <- grobTree(textGrob(metric, x=0.01,  y=0.97, hjust=0, gp=gpar(col="black", fontsize=13)))
+  
   ggplot(maxn.per.sample, aes(x = site,y=total.abundance)) + 
     stat_summary(fun.y=mean, geom="bar",fill="white",colour="black") +
     stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
@@ -1053,8 +1132,10 @@ output$maxn.metric.site.plot <- renderPlot({
     ylab("Per stereo-BRUV \n(+/- SE)")+
     theme_bw()+
     scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
-    Theme1+theme(panel.grid = element_blank(), panel.border = element_blank(), axis.line = element_line(colour = "black"))+
-    ggtitle("Plot of abundance by Site")
+    Theme1+
+    ggtitle("Plot of abundance by Site")+
+    annotation_custom(grob.metric)
+    
 })
 
   # Maxn metric plot Status ----
@@ -1065,18 +1146,29 @@ output$maxn.metric.status.plot <- renderPlot({
     filter(metric == input$maxn.metric.selector)
   
   posn.d <- position_dodge(0.9)
+  
+  if(input$maxn.metric.plot.selector=="Black and white"){
+    scale.theme.metric<-scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))
+  }else{
+    scale.theme.metric<-scale_fill_manual(values = c("Fished" = "grey", "No-take" = "#1470ad"))
+  }
+  
+  metric<-as.character(input$maxn.metric.selector)
+  
+  grob.metric <- grobTree(textGrob(metric, x=0.01,  y=0.97, hjust=0, gp=gpar(col="black", fontsize=13)))
     
     ggplot(maxn.per.sample, aes(x = status, y=total.abundance, fill=status, group=status)) + 
       stat_summary(fun.y=mean, geom="bar",colour="black",position="dodge") +
       stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1,position=posn.d) +
+      scale.theme.metric+
       geom_hline(aes(yintercept=0))+
       xlab("")+
       ylab("Per stereo-BRUV \n(+/- SE)")+
-      scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
       theme_bw()+
       scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
-      Theme1+theme(panel.grid = element_blank(), panel.border = element_blank(), axis.line = element_line(colour = "black"))+
-      ggtitle("Plot of abundance by Status")
+      Theme1+
+      ggtitle("Plot of abundance by Status")+
+      annotation_custom(grob.metric)
 })
 
 
