@@ -1,0 +1,10 @@
+name: globalarchiveapp
+title:
+username:
+account: globalarchive
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1404756
+bundleId: 2558450
+url: https://globalarchive.shinyapps.io/globalarchiveapp/
+when: 1572661930.68869

@@ -7,6 +7,9 @@ navbarPage(
         
   # File uploads ----
         h5("Upload your own data or use example montebello data already uploaded."),
+  
+        # uiOutput("example"),
+  
         fileInput("complete.maxn", "Upload complete maxn FST File",
                   accept = c("image/vnd.fst",
                              ".fst")),
@@ -31,7 +34,7 @@ navbarPage(
   
   # MaxN summary Tab ----
   tabPanel(
-    "MaxN summary",
+    "MaxN summary",icon = icon("list-alt"),
     sidebarLayout(
       sidebarPanel(
         # Select CampaignID:
@@ -54,7 +57,7 @@ navbarPage(
   
   # MaxN Plot species Tab ----
   tabPanel(
-    "MaxN plot species",
+    "MaxN plot species",icon = icon("bar-chart-o"),
     sidebarLayout(
       sidebarPanel(
         
@@ -73,6 +76,9 @@ navbarPage(
         selectInput("maxn.plot.selector", "Choose plot theme", 
                      choices = c("GlobalArchive",
                                  "Black and white"), multiple = FALSE),
+        imageOutput("species.image",width="10%"),
+        uiOutput("CAAB"),
+        
         width = 3),
       
       # Plots
@@ -84,7 +90,7 @@ navbarPage(
   
   # MaxN assemblage plots Tab ----
   tabPanel(
-    "MaxN plot metrics",
+    "MaxN plot metrics",icon = icon("bar-chart-o"),
     sidebarLayout(
       sidebarPanel(
         selectInput(inputId = "maxn.metric.campaignid.selector", label = "CampaignID",
@@ -110,19 +116,23 @@ navbarPage(
 
 # Length summary Tab ----
 tabPanel(
-  "Length summary",
+  "Length summary",icon = icon("list-alt"),
   sidebarLayout(
     sidebarPanel(
+      # Select CampaignID:
+      selectInput(inputId = "length.summary.campaignid.selector", label = "CampaignID",
+                  choices = NULL),
+      
       selectInput("length.summary.groupby", "Summarise by :",
                   c("Species" = "Species",
                     "Target group" = "Target group",
-                    "Trophic group" = "Trophic group")),width = 2),
+                    "Trophic group" = "Trophic group")),width = 3),
 
     mainPanel(DT::dataTableOutput('length.summary')))),
 
 # Length species Tab -----
 tabPanel(
-  "Length plot species",
+  "Length plot species",icon = icon("bar-chart-o"),
   sidebarLayout(
     sidebarPanel(
       # Select CampaignID
@@ -135,7 +145,11 @@ tabPanel(
       htmlOutput("length.species.selector"),
 
       # Bin widths
-      numericInput("length.binwidth","Adjust binwidth of histogram", value = 5),width = 3),
+      numericInput("length.binwidth","Adjust binwidth of histogram", value = 5),
+      selectInput("length.plot.selector", "Choose plot theme",
+                  choices = c("GlobalArchive",
+                              "Black and white"), multiple = FALSE),
+      width = 3),
 
     # Plots
     mainPanel(
@@ -144,13 +158,17 @@ tabPanel(
 
 # Length metrics Tab -----
 tabPanel(
-  "Length plot metrics",
+  "Length plot metrics",icon = icon("bar-chart-o"),
   sidebarLayout(
     sidebarPanel(
       # Select CampaignID
       selectInput(inputId = "length.metric.campaignid.selector", label = "CampaignID",
                   choices = NULL),
-    selectInput("length.metric.selector", "Select metric to plot", choices = c("Target group","Trophic group"), multiple = FALSE),width = 3),
+    selectInput("length.metric.selector", "Select metric to plot", choices = c("Target group","Trophic group"), multiple = FALSE),
+    selectInput("length.metric.plot.selector", "Choose plot theme",
+                choices = c("GlobalArchive",
+                            "Black and white"), multiple = FALSE),
+    width = 3),
 
     # Plots
     mainPanel(
@@ -159,14 +177,18 @@ tabPanel(
 
 # Mass metrics Tab ----
 tabPanel(
-  "Mass plot metrics",
+  "Mass plot metrics",icon = icon("bar-chart-o"),
   sidebarLayout(
     sidebarPanel(
       # Select CampaignID
       selectInput(inputId = "mass.campaignid.selector", label = "CampaignID",
                   choices = NULL),
       selectInput("mass.group.selector", "Select group to plot by:", choices = c("Target group","Trophic group"), multiple = FALSE),
-      selectInput("mass.metric.selector", "Select metric to plot:", choices = c("Total mass of all fish","Mass of all fish greater than 200 mm","Mass of all fish greater than 300 mm"), multiple = FALSE),width = 3),
+      selectInput("mass.metric.selector", "Select metric to plot:", choices = c("Total mass of all fish","Mass of all fish greater than 200 mm","Mass of all fish greater than 300 mm"), multiple = FALSE),
+      selectInput("mass.plot.selector", "Choose plot theme",
+                  choices = c("GlobalArchive",
+                              "Black and white"), multiple = FALSE),
+      width = 3),
 
     # Plots
     mainPanel(
@@ -175,7 +197,7 @@ tabPanel(
 
 # Habitat Tab ----
 tabPanel(
-  "Habitat",
+  "Habitat",icon = icon("bar-chart-o"),
   sidebarLayout(
     sidebarPanel(
       # Select CampaignID

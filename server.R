@@ -92,6 +92,7 @@ function(input, output, session) {
     # Update selector
     updateSelectInput(session, "length.campaignid.selector", choices = options, selected = "All")
     updateSelectInput(session, "length.metric.campaignid.selector", choices = options, selected = "All")
+    updateSelectInput(session, "length.summary.campaignid.selector", choices = options, selected = "All")
   })
   
   # Mass ----
@@ -152,10 +153,11 @@ life.history<-  reactive({
         mutate(trophic.group=ga.capitalise(RLS.trophic.group))%>%
         dplyr::mutate(target.group=str_replace_all(.$Fishing.type,c("R"="Recreational","C"="Commercial","B/"="","B"="Bycatch","Commercial/Recreational"="Target","Commercial"="Target","Recreational"="Target")))%>%
         dplyr::mutate(trophic.group=str_replace_all(.$trophic.group,c("NANA"="Missing trophic group","NA"="Missing trophic group")))%>%
+       naniar::replace_with_na(replace = list(trophic.group = ""))%>%
         tidyr::replace_na(list(target.group="Non-target",trophic.group="Missing trophic group"))%>%
         dplyr::mutate(target.group = factor(target.group, levels = c("Target","Bycatch","Non-target")))%>%
         dplyr::mutate(target.group = fct_relevel(target.group, "Target","Bycatch","Non-target"))%>%
-        dplyr::select(Family,Genus,Species,trophic.group,target.group,Australian.common.name)%>%
+        dplyr::select(CAAB,Family,Genus,Species,trophic.group,target.group,Australian.common.name)%>%
         ga.clean.names()
   
     life.history
@@ -784,6 +786,7 @@ maxn.summary.data <- reactive({
       left_join(.,life.history)%>%
       tidyr::replace_na(list(target.group="Non-target",trophic.group="Missing trophic group"))%>%
       dplyr::rename(Family=family,Genus=genus,Species=species,'Total abundance'=total.abundance,'Number of samples'=number.of.samples,'Trophic group'=trophic.group,'Target group'=target.group,'Common name'=australian.common.name)
+    maxn.data$'Trophic group' <- sub("^$", "Missing trophic group", maxn.data$'Trophic group')
   }
   
   if (input$maxn.summary.groupby=="Target group") {
@@ -800,15 +803,25 @@ maxn.summary.data <- reactive({
   }
   
   if (input$maxn.summary.groupby=="Trophic group") {
+    empty_as_na <- function(x){
+      if("factor" %in% class(x)) x <- as.character(x) ## since ifelse wont work with factors
+      ifelse(as.character(x)!="", x, NA)
+    }
+    
     maxn.data <- maxn.data%>%
       filter(maxn>0)%>%
       left_join(.,life.history)%>%
+      mutate_each(funs(empty_as_na),matches="trophic.group")%>%
+      naniar::replace_with_na(replace = list(trophic.group = ""))%>%
       tidyr::replace_na(list(trophic.group="Missing trophic group"))%>%
       dplyr::group_by(trophic.group)%>%
       dplyr::summarise(total.abundance=sum(maxn),number.of.samples=length(unique(id)))%>%
       ungroup()%>%
       arrange(-total.abundance)%>%
-      dplyr::rename('Total abundance'=total.abundance,'Number of samples'=number.of.samples,'Trophic group'=trophic.group)
+      dplyr::rename('Total abundance'=total.abundance,'Number of samples'=number.of.samples,'Trophic group'=trophic.group)%>%
+      glimpse()
+    
+    print(unique(maxn.data$'Trophic group'))
   }
   
   maxn.data
@@ -915,6 +928,14 @@ length.summary.data <- reactive({
   
   sum.length.data<-length.data
   
+  if (input$length.summary.campaignid.selector == "All") {
+    sum.length.data
+    
+  } else {
+    sum.length.data<-sum.length.data%>%
+      filter(campaignid == as.character(input$length.summary.campaignid.selector))
+  }
+  
   if (input$length.summary.groupby=="Species") {
     
     length.data <- sum.length.data%>%
@@ -927,7 +948,7 @@ length.summary.data <- reactive({
       ungroup()%>%
       arrange(-Total.measured)%>%
       left_join(.,life.history)%>%
-      dplyr::rename(Family=family,Genus=genus,Species=species,'Trophic group'=trophic.group,"Target group"=target.group,'Total measured'=Total.measured,'Number of samples'=Number.of.samples,'Mean length'=Mean.length,'Min length'=Min.length,'Max length'=Max.length)
+      dplyr::rename(Family=family,Genus=genus,Species=species,'Trophic group'=trophic.group,"Target group"=target.group,'Total measured'=Total.measured,'Number of samples'=Number.of.samples,'Mean length'=Mean.length,'Min length'=Min.length,'Max length'=Max.length,'Common name'=australian.common.name)
     
   }
   
@@ -980,12 +1001,13 @@ output$maxn.status.plot <- renderPlot({
     group_by(campaignid,sample,status)%>%
     summarise(maxn=sum(maxn))
   
+  family.name<-unique(maxn_species_data()$family)
   species.name<-unique(maxn_species_data()$species)
-  
   genus.name<-unique(maxn_species_data()$genus)
   
   scientific.name<-paste(genus.name,species.name,sep=" ")
-  
+  #image.name<-paste(family.name,genus.name,species.name,"png",sep=".")
+  #image.name<-paste("images/species/",image.name,sep="")
   common.name<-unique(maxn_species_data()$australian.common.name)
   
 grob.sci <- grobTree(textGrob(as.character(scientific.name), x=0.01,  y=0.97, hjust=0,
@@ -999,11 +1021,16 @@ grob.com <- grobTree(textGrob(as.character(common.name), x=0.01,  y=0.90, hjust=
     scale.theme<-scale_fill_manual(values = c("Fished" = "grey", "No-take" = "#1470ad"))
   }
   
+
+ #img <- png::readPNG(image.name)
+ #fish.img <- rasterGrob(img, interpolate=TRUE)
+
   ggplot(maxn.per.sample, aes(x = status,y=maxn, fill = status)) + 
     stat_summary(fun.y=mean, geom="bar",colour="black") +
     stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1) +
     geom_hline(aes(yintercept=0))+
     scale.theme+
+    #annotation_custom(fish.img, xmin=-Inf, xmax=Inf, ymin=-Inf, ymax=Inf) +
     xlab("")+
     ylab("Average abundance per stereo-BRUV \n(+/- SE)")+
     theme_bw()+
@@ -1013,6 +1040,24 @@ grob.com <- grobTree(textGrob(as.character(common.name), x=0.01,  y=0.90, hjust=
     annotation_custom(grob.sci)+ 
     annotation_custom(grob.com)
 })
+
+# Species image -----
+output$species.image <- renderImage({
+  
+  family.name<-unique(maxn_species_data()$family)
+  species.name<-unique(maxn_species_data()$species)
+  genus.name<-unique(maxn_species_data()$genus)
+  sci.name<-paste(genus.name,species.name,sep=" ")
+  image.name<-paste(family.name,genus.name,species.name,"png",sep=".")
+  image.name<-paste("images/species/",image.name,sep="")
+  
+  return(list(
+    src = image.name,
+    contentType = "image/png",
+    alt = sci.name,
+    width = "1000%"
+  ))
+}, deleteFile = FALSE)
 
   # Maxn species plot Location ----
   
@@ -1241,8 +1286,14 @@ output$maxn.metric.spatial.plot <- renderLeaflet({
 ### 7. Length plots ----
   # Length histogram ----
 output$length.histogram <- renderPlot({
+  if(input$length.plot.selector=="Black and white"){
+    scale.theme<-scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))
+  }else{
+    scale.theme<-scale_fill_manual(values = c("Fished" = "grey", "No-take" = "#1470ad"))
+  }
+  
   ggplot(length_species_data(),aes(x = length,  fill=status), col = "black",alpha=0.5)+
-    scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
+    scale.theme+
     geom_histogram(alpha=0.5, position="identity",binwidth=input$length.binwidth,col="black")+
     xlab("Length (mm)") + ylab("Count") +
     theme_bw() +
@@ -1253,15 +1304,19 @@ output$length.histogram <- renderPlot({
   # Length species plot Status ----
 output$length.status.plot <- renderPlot({
   
+  if(input$length.plot.selector=="Black and white"){
+    scale.theme<-scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))
+  }else{
+    scale.theme<-scale_fill_manual(values = c("Fished" = "grey", "No-take" = "#1470ad"))
+  }
+  
   ggplot(length_species_data(),aes(x = factor(status), y = length,  fill = status, notch=FALSE, outlier.shape = NA),alpha=0.5) + 
     theme( panel.background = element_blank(),axis.line = element_line(colour = "black"))+
     stat_boxplot(geom='errorbar')+
-    scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
+    scale.theme+
     geom_boxplot(outlier.color = NA, notch=FALSE)+
     stat_summary(fun.y=mean, geom="point", shape=23, size=4)+ #this is adding the dot for the mean
-    theme_bw()+
     scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
-    Theme1+
     xlab("Status") + ylab("Length (mm)") +
     theme_bw() +
     Theme1
@@ -1283,6 +1338,12 @@ output$length.metric.status <- renderPlot({
     summarise(max=max(boxplot.stats(length)$stats))%>%
     summarise(max=max(max))%>%
     as.data.frame()
+  
+  if(input$length.metric.plot.selector=="Black and white"){
+    scale.theme<-scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))
+  }else{
+    scale.theme<-scale_fill_manual(values = c("Fished" = "grey", "No-take" = "#1470ad"))
+  }
 
   ggplot(length.metric,aes(x = level, y = length, fill=status, notch=FALSE, outlier.shape = NA)) + 
     stat_boxplot(geom='errorbar')+
@@ -1290,12 +1351,11 @@ output$length.metric.status <- renderPlot({
     stat_summary(fun.y=mean, geom="point", shape=23, size=4, position=posn.d)+ #this is adding the dot for the mean
     theme_bw()+
     xlab("") + ylab("Length (mm)") +
-    scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
+    scale.theme+
     ggtitle("Plot of length by Status") +
     theme_bw()+
     scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
     Theme1+
-    theme(panel.grid = element_blank(), panel.border = element_blank(), axis.line = element_line(colour = "black"))+ 
     coord_cartesian(ylim = c(0,max(stats.dat)*1.15)) #1.45
     
 })
@@ -1387,17 +1447,22 @@ stats.dat<-mass.metrics%>%
 
 posn.d <- position_dodge(0.9)
 
+if(input$mass.plot.selector=="Black and white"){
+  scale.theme<-scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))
+}else{
+  scale.theme<-scale_fill_manual(values = c("Fished" = "grey", "No-take" = "#1470ad"))
+}
+
 ggplot(mass.metrics, aes(x = level, y=total.mass, fill = status, group=status)) + 
   stat_summary(fun.y=mean, geom="bar",colour="black",position="dodge") +
   stat_summary(fun.ymin = se.min, fun.ymax = se.max, geom = "errorbar", width = 0.1,position=posn.d) +
   geom_hline(aes(yintercept=0))+
   xlab("")+
   ylab("Per stereo-BRUV \n(+/- SE)")+
-  scale_fill_manual(values = c("Fished" = "grey90", "No-take" = "grey40"))+
+  scale.theme+
   theme_bw()+
   Theme1+
   scale_y_continuous(expand = expand_scale(mult = c(0, .1)))+
-  theme(panel.grid = element_blank(), panel.border = element_blank(), axis.line = element_line(colour = "black"))+
   ggtitle("Plot of mass by Status")
 })
 
@@ -1487,4 +1552,59 @@ ggplot(mass.metrics, aes(x = level, y=total.mass, fill = status, group=status)) 
     contentType = "R File/R"
   )
   
+
+
+output$CAAB <- renderUI({
+  names<-life.history()%>%
+    dplyr::select(caab,family,genus,species,australian.common.name)%>%
+    glimpse()
+  
+  if(input$maxn.com.spe.selector=="Scientific name"){
+    
+    code<-maxn_data() %>%
+      left_join(names)%>%
+      dplyr::filter(family == input$maxn.family.selector,
+                    genus == input$maxn.genus.selector,
+                    species == input$maxn.species.selector
+      )%>%
+      select(caab)%>%
+      glimpse()
+    
+  } else {
+    
+    code<-maxn_data() %>%
+      left_join(names)%>%
+      dplyr::filter(australian.common.name == input$maxn.common.selector)%>%
+      select(caab)%>%
+      glimpse()
+  }
+  
+  
+  code.cha<-as.character(unique(code$caab))
+  caab.link<-paste("https://www.cmar.csiro.au/caab/taxon_report.cfm?caab_code=",code.cha,sep="")
+  
+  rls.name<-paste(unique(maxn_species_data()$genus),unique(maxn_species_data()$species),sep="-")
+  rls.link<-paste("https://reeflifesurvey.com/species/",rls.name,"/",sep="")
+  
+  CAAB <- a("CAAB", href=caab.link)
+  RLS<-a("RLS",href=rls.link)
+  
+  tagList("Further information:", CAAB, RLS) # can change url link text here
+})
+
+# output$image1 <- renderImage({
+#   width<- "100%"
+#   height<- "100%"
+#   list(src = "images/ala-logo.png",
+#        contentType = "image/png",
+#        width = width,
+#        height = height,
+#   )
+#   
+# }, deleteFile = FALSE)
+# 
+# output$example <- renderUI({
+#   tags$a(imageOutput("image1"),href="https://www.google.com")
+# })
+
 }
